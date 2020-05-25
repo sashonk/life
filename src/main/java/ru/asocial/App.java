@@ -30,7 +30,7 @@ public class App {
     static boolean dragging;
     static AtomicLong delay = new AtomicLong(1000);
     static Map<String, Figure> figures = new HashMap<>();
-    static boolean mustStopOnRepeat = false;
+    static boolean mustStopOnRepeat = true;
 
     static int pentamino(byte[][] array, int shiftRight, int shiftDown){
         array[0 + shiftRight][1 + shiftDown] = 1;
@@ -51,20 +51,25 @@ public class App {
     }
 
     static void custom_preset(){
- /*       Figure rifle = figures.get("rifle");
-        alive += rifle.render(currentGeneration, 100, 100, false, false);
-*/
 /*
-        Figure glyder = figures.get("glyder");
-        alive += glyder.render(currentGeneration, 100, 100, true, true);
+        Figure rifle = figures.get("rifle");
+        alive += rifle.render(currentGeneration, 800, 800, true, true);
 */
 
-        Figure galaxy_cock = figures.get("galaxy_cock");
+
+        Figure pentamino_R = figures.get("pentamino_R");
+        alive += pentamino_R.render(currentGeneration, 500, 500, true, true);
+
+        Figure vulkano_p5 = figures.get("vulkano_p5");
+        alive += vulkano_p5.render(currentGeneration, 300, 300, false, true);
+
+
+/*        Figure galaxy_cock = figures.get("galaxy_cock");
         for (int i = 0; i < 20 ; i++ ) {
             for (int j = 0; j < 20; j++) {
                 alive += galaxy_cock.render(currentGeneration, 100 + i * (galaxy_cock.getWidth() + 20), 100 + j* (galaxy_cock.getHeight() + 20));
             }
-        }
+        }*/
 
 /*        Figure qwazar = figures.get("qwazar");
         for (int i = 0; i < 10 ; i++ ) {
@@ -254,7 +259,7 @@ public class App {
                 int neighboursCount = upCell + upLeftCell + upRightCell + rightCell + downCell + downLeftCell + downRightCell + leftCell;
                 byte next;
                 if (isDead(self)) {
-                    if (neighboursCount == 3 || (neighboursCount == 2 && r.nextDouble() > 0.9999999)) {
+                    if (neighboursCount == 3 ) {
                         next = 1;
                         alive++;
                     }

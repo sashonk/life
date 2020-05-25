@@ -1,12 +1,10 @@
 # life
 
-Impementation of Conway's Game of Life
+Implementation of Conwoy's game of life.
 
-"1" - sleep 100ms
+"1" - fast
+"2" - slow
+"0" - real time
+LMB - zoom in
+RMB - reset zoom
 
-"2" - sleep 1000ms
-
-"0" - sleep 0s (real time)
-
-LMB - scale in
-RMB - scale out

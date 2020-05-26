@@ -17,7 +17,7 @@ class Util {
         return array;
     }
 
-    static Figure parseFigure(String path) throws Exception{
+    static FigureTemplate parseTemplate(String path) throws Exception{
         InputStream is = Util.class.getResourceAsStream("/" + path);
         List<String> lines = IOUtils.readLines(is, "utf-8");
         int height = lines.size();
@@ -42,7 +42,7 @@ class Util {
                 buffer[j][i] = state;
             }
         }
-        return new Figure(width, height, buffer, alive);
+        return new FigureTemplate(width, height, buffer, alive);
     }
 
 }

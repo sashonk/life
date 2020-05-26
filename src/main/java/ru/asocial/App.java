@@ -1,5 +1,7 @@
 package ru.asocial;
 
+import org.apache.commons.io.IOUtils;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -7,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
@@ -22,66 +25,61 @@ public class App {
     static List<Long> crcList = new LinkedList<>();
     static long alive = 0;
     static final BlockingQueue queue = new LinkedBlockingQueue(1);
-    static List<point> lastPoints = new LinkedList<>();
+    static List<Point> lastPoints = new LinkedList<>();
     static JPanel panel;
+    static JFrame frame;
     static boolean isPentamino;
     static boolean stopCalculations = false;
-    static point p1, p2;
+    static Point p1, p2;
     static boolean dragging;
     static AtomicLong delay = new AtomicLong(1000);
-    static Map<String, Figure> figures = new HashMap<>();
+    static Map<String, FigureTemplate> templates = new HashMap<>();
     static boolean mustStopOnRepeat = true;
+    static boolean useOldTemplates = false;
+    static int maxWidth = 0;
+    static int maxHeight = 0;
 
-    static int pentamino(byte[][] array, int shiftRight, int shiftDown){
-        array[0 + shiftRight][1 + shiftDown] = 1;
-        array[1+ shiftRight][0+ shiftDown] = 1;
-        array[1+ shiftRight][1+ shiftDown] = 1;
-        array[1+ shiftRight][2+ shiftDown] = 1;
-        array[2+ shiftRight][0+ shiftDown] = 1;
-        return 5;
+    static void addObject(FigureTemplate f, int x, int y){
+        alive += f.render(currentGeneration, x, y);
     }
 
-    static int glyder(byte[][] array, int shiftRight, int shiftDown){
-        array[0 + shiftRight][2 + shiftDown] = 1;
-        array[1+ shiftRight][2+ shiftDown] = 1;
-        array[1+ shiftRight][0+ shiftDown] = 1;
-        array[2+ shiftRight][1+ shiftDown] = 1;
-        array[2+ shiftRight][2+ shiftDown] = 1;
-        return 5;
+    static void addObject(FigureTemplate f, int x, int y, boolean flipX, boolean flipY){
+        alive += f.render(currentGeneration, x, y, flipX, flipY);
     }
 
     static void custom_preset(){
-/*
-        Figure rifle = figures.get("rifle");
-        alive += rifle.render(currentGeneration, 800, 800, true, true);
-*/
-
-
-        Figure pentamino_R = figures.get("pentamino_R");
-        alive += pentamino_R.render(currentGeneration, 500, 500, true, true);
-
-        Figure vulkano_p5 = figures.get("vulkano_p5");
-        alive += vulkano_p5.render(currentGeneration, 300, 300, false, true);
-
-
-/*        Figure galaxy_cock = figures.get("galaxy_cock");
-        for (int i = 0; i < 20 ; i++ ) {
-            for (int j = 0; j < 20; j++) {
-                alive += galaxy_cock.render(currentGeneration, 100 + i * (galaxy_cock.getWidth() + 20), 100 + j* (galaxy_cock.getHeight() + 20));
-            }
-        }*/
-
-/*        Figure qwazar = figures.get("qwazar");
-        for (int i = 0; i < 10 ; i++ ) {
-            for (int j = 0; j < 3; j++) {
-                alive += qwazar.render(currentGeneration, 500 + i * (qwazar.getWidth() + 10), 600 + j * (qwazar.getHeight() + 10));
-            }
-        }*/
-
-        crc32Generation();
+       /* Figure f = templates.get("houndstoothagar");
+        addObject(f, 500, 500);*/
+       int x = 10, y = 10;
+       int dx = 170, dy = 170;
+       List<Map.Entry<String, FigureTemplate>> entries = new LinkedList<>(templates.entrySet());
+       Collections.shuffle(entries);
+       for (Map.Entry<String, FigureTemplate> entry : entries) {
+           FigureTemplate t = entry.getValue();
+           if (x + t.getWidth() >= GLOBAL_WIDTH - 50) {
+               x = 50;
+               y += t.getHeight() + dy;
+           }
+           if (y + t.getHeight() >= GLOBAL_HEIGHT - 50) {
+               break;
+           }
+           addObject(t, x, y);
+           x += t.getWidth() + dx;
+           //y += t.getHeight() + dy;
+       }
     }
 
-    static void createFigures() throws Exception {
+    static void random_figure(){
+        List<Map.Entry<String, FigureTemplate>> entries = new LinkedList<>(templates.entrySet());
+        Collections.shuffle(entries);
+
+        Map.Entry<String, FigureTemplate> e = entries.get(0);
+        frame.setTitle(e.getKey());
+
+        addObject(e.getValue(), 500, 500);
+    }
+
+    static List<String> oldTemplates(){
         List<String> paths = new LinkedList<>();
         paths.add("oktagon4");
         paths.add("vulkano_p5");
@@ -94,27 +92,26 @@ public class App {
         paths.add("hertz_osc");
         paths.add("something_flying");
         paths.add("galaxy_cock");
-
-        for (String path : paths) {
-            Figure f = Util.parseFigure(path);
-            figures.put(path, f);
-        }
+        return paths;
     }
 
-    static void random_preset(){
-        Random r = new Random(System.currentTimeMillis());
-        for (int i = 60; i<GLOBAL_WIDTH; i+=43) {
-            for (int j = 50; j< GLOBAL_HEIGHT; j+=36) {
-                if (r.nextDouble() > 0.5) {
-                    alive+=pentamino(currentGeneration, i, j);
-                }
-                else {
-                    alive+=glyder(currentGeneration, i, j);
-                }
+    static void loadTemplates() throws Exception {
+        List<String> paths;
+        if (useOldTemplates) {
+            paths = oldTemplates();
+        }
+        else {
+            try (InputStream is = App.class.getResourceAsStream("/templates.txt")) {
+                paths = IOUtils.readLines(is);
             }
         }
 
-        crc32Generation();
+        for (String path : paths) {
+            FigureTemplate f = Util.parseTemplate(path);
+            templates.put(path, f);
+            maxWidth = maxWidth > f.getWidth() ? maxWidth : f.getWidth();
+            maxHeight = maxHeight > f.getHeight() ? maxHeight : f.getHeight();
+        }
     }
 
     static void print(){
@@ -122,7 +119,7 @@ public class App {
     }
 
     public static void main(String[] argc) throws Exception{
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -144,14 +141,14 @@ public class App {
             protected void paintChildren(Graphics g) {
                 super.paintChildren(g);
                 g.setColor(Color.GRAY);
-                List<point> points = (List<point>) queue.poll();
+                List<Point> points = (List<Point>) queue.poll();
                 if (points != null) {
                     lastPoints = points;
                 }
 
                 BufferedImage buf = new BufferedImage(GLOBAL_WIDTH, GLOBAL_HEIGHT, BufferedImage.TYPE_INT_RGB);
                 Graphics2D g2d = (Graphics2D) buf.getGraphics();
-                for (point p : lastPoints) {
+                for (Point p : lastPoints) {
                     g2d.drawOval(p.getX(), p.getY(), 1,1);
                 }
                 Image imageToDraw = buf;
@@ -174,7 +171,7 @@ public class App {
                 super.mousePressed(e);
 
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    p1 = new point(e.getX(), e.getY());
+                    p1 = new Point(e.getX(), e.getY());
                     dragging = true;
                 }
                 else if (e.getButton() == MouseEvent.BUTTON3) {
@@ -188,7 +185,7 @@ public class App {
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    p2 = new point(e.getX(), e.getY());
+                    p2 = new Point(e.getX(), e.getY());
                     dragging = false;
                     panel.repaint();
                 }
@@ -199,18 +196,14 @@ public class App {
         frame.setSize(GLOBAL_WIDTH, GLOBAL_HEIGHT);
         frame.setVisible(true);
 
-
         currentGeneration = Util.initArray(GLOBAL_WIDTH, GLOBAL_HEIGHT);
         nextGeneration = Util.initArray(GLOBAL_WIDTH, GLOBAL_HEIGHT);
-        createFigures();
+        loadTemplates();
+        System.out.println("Templates: maxWidth=" + maxWidth + "; maxHeight=" + maxHeight);
 
-        //preset1();
-        //preset2();
-        //pentamino_preset();
-        //glyder_preset();
-        //random_preset();
-        custom_preset();
-        //fever_preset();
+        //custom_preset();
+        random_figure();
+        crc32Generation();
         print();
 
         while (!stopCalculations) {
@@ -238,7 +231,7 @@ public class App {
     }
 
     static void calculateNextGeneration() throws  Exception{
-        List<point> drawPoints = new LinkedList<>();
+        List<Point> drawPoints = new LinkedList<>();
         Random r = new Random(System.currentTimeMillis());
         for (int i = 0; i < GLOBAL_WIDTH; i++) {
             for (int j = 0; j < GLOBAL_HEIGHT; j++) {
@@ -278,7 +271,7 @@ public class App {
                 }
                 nextGeneration[i][j] = next;
                 if (next == 1) {
-                    drawPoints.add(new point(i, j));
+                    drawPoints.add(new Point(i, j));
                 }
             }
         }

@@ -23,28 +23,53 @@ public class App {
     static byte[][] nextGeneration;
     static long currentGenerationIndex = 0;
     static List<Long> crcList = new LinkedList<>();
-    static long alive = 0;
+    static long died = 0;
+    static long born = 0;
+    static long survived = 0;
+
     static final BlockingQueue queue = new LinkedBlockingQueue(1);
+    static final BlockingQueue figureQueue = new LinkedBlockingQueue(1);
     static List<Point> lastPoints = new LinkedList<>();
     static JPanel panel;
-    static JFrame frame;
+    static volatile JFrame frame;
     static boolean isPentamino;
     static boolean stopCalculations = false;
     static Point p1, p2;
     static boolean dragging;
     static AtomicLong delay = new AtomicLong(1000);
-    static Map<String, FigureTemplate> templates = new HashMap<>();
-    static boolean mustStopOnRepeat = true;
+    static LinkedHashMap<String, FigureTemplate> templates = new LinkedHashMap<>();
+    static List<String> templateNames = new ArrayList<>();
+    static boolean mustStopOnRepeat = false;
     static boolean useOldTemplates = false;
     static int maxWidth = 0;
     static int maxHeight = 0;
+    static volatile String selectedTemplateName = "spacefiller";
+    static volatile Map<Integer, Color> colors = new HashMap<>();
+    static void updateFrameTitle(){
+        final String selectedTemplate = selectedTemplateName;
+        final long a = born + survived;
+        final long b = born;
+        final long s = survived;
+        final long d = died;
+        SwingUtilities.invokeLater(new Runnable() {
+
+            @Override
+            public void run() {
+                frame.setTitle(String.format("template=%s alive=%d died=%d born=%d survived=%d", selectedTemplate, a, d, b, s));
+            }
+        });
+    }
+
+    static void setSelectedTemplateName(String s) {
+        selectedTemplateName = s;
+    }
 
     static void addObject(FigureTemplate f, int x, int y){
-        alive += f.render(currentGeneration, x, y);
+        addObject(f, x, y, false, false);
     }
 
     static void addObject(FigureTemplate f, int x, int y, boolean flipX, boolean flipY){
-        alive += f.render(currentGeneration, x, y, flipX, flipY);
+        born += f.render(currentGeneration, x, y, flipX, flipY);
     }
 
     static void custom_preset(){
@@ -71,12 +96,19 @@ public class App {
 
     static void random_figure(){
         List<Map.Entry<String, FigureTemplate>> entries = new LinkedList<>(templates.entrySet());
-        Collections.shuffle(entries);
+        Collections.sort(entries, new Comparator<Map.Entry<String, FigureTemplate>>() {
+            @Override
+            public int compare(Map.Entry<String, FigureTemplate> a, Map.Entry<String, FigureTemplate> b) {
+                return Integer.compare(b.getValue().getWidth(), a.getValue().getWidth());
+            }
+        });
 
-        Map.Entry<String, FigureTemplate> e = entries.get(0);
-        frame.setTitle(e.getKey());
+        Map.Entry<String, FigureTemplate> e = entries.get(20);
+       // frame.setTitle(e.getKey());
 
-        addObject(e.getValue(), 500, 500);
+
+
+        addObject(e.getValue(), 10, 10);
     }
 
     static List<String> oldTemplates(){
@@ -95,6 +127,12 @@ public class App {
         return paths;
     }
 
+    static void createColors(){
+        for (int i = 0; i < 256; i++) {
+            colors.put(i, new Color(i, 0, 0));
+        }
+    }
+
     static void loadTemplates() throws Exception {
         List<String> paths;
         if (useOldTemplates) {
@@ -109,13 +147,18 @@ public class App {
         for (String path : paths) {
             FigureTemplate f = Util.parseTemplate(path);
             templates.put(path, f);
+            templateNames.add(path);
             maxWidth = maxWidth > f.getWidth() ? maxWidth : f.getWidth();
             maxHeight = maxHeight > f.getHeight() ? maxHeight : f.getHeight();
+            if (selectedTemplateName == null) {
+                setSelectedTemplateName(path);
+            }
         }
+        Collections.sort(templateNames);
     }
 
     static void print(){
-        System.out.println("Generation: " + currentGenerationIndex + "; alive: " + alive);
+        System.out.println("Generation: " + currentGenerationIndex + "; alive: " + (born + survived));
     }
 
     public static void main(String[] argc) throws Exception{
@@ -133,6 +176,25 @@ public class App {
                 else if (e.getKeyChar() == '0') {
                     delay.set(0);
                 }
+                else if (e.getKeyChar() == '.') {
+                    int currentIndex = templateNames.indexOf(selectedTemplateName);
+                    int index = currentIndex == templateNames.size() - 1 ? 0 : currentIndex + 1;
+                    setSelectedTemplateName(templateNames.get(index));
+                }
+                else if (e.getKeyChar() == ',') {
+                    int currentIndex = templateNames.indexOf(selectedTemplateName);
+                    int index = currentIndex == 0 ? templateNames.size() - 1 : currentIndex - 1;
+                    setSelectedTemplateName(templateNames.get(index));
+                }
+                else if (e.getKeyChar() == 'g') {
+                    setSelectedTemplateName("glider");
+                }
+                else if (e.getKeyChar() == 's') {
+                    setSelectedTemplateName("spacefiller");
+                }
+                else if (e.getKeyChar() == 'p') {
+                    setSelectedTemplateName("puffsuppressor");
+                }
             }
         });
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -147,9 +209,14 @@ public class App {
                 }
 
                 BufferedImage buf = new BufferedImage(GLOBAL_WIDTH, GLOBAL_HEIGHT, BufferedImage.TYPE_INT_RGB);
-                Graphics2D g2d = (Graphics2D) buf.getGraphics();
                 for (Point p : lastPoints) {
-                    g2d.drawOval(p.getX(), p.getY(), 1,1);
+
+                    //int a = (int)((Math.sin( ((p.getX() + p.getY()) * 5) / (double)GLOBAL_WIDTH) + 1) * 125);
+                    //Color c = colors.get(a);
+                    Color c = Color.WHITE;
+                    int rgb = c.getRGB();
+                    //g2d.drawOval(p.getX(), p.getY(), 1,1);
+                    buf.setRGB(p.getX(), p.getY(), rgb);
                 }
                 Image imageToDraw = buf;
                 if (p1 != null && p2 != null && !dragging) {
@@ -160,7 +227,8 @@ public class App {
                     int halfize = Math.max(right-left, bottom-top) / 2;
                     int cx = (right + left) / 2;
                     int cy = (bottom + top) / 2;
-                    imageToDraw = buf.getSubimage(cx - halfize, cy-halfize, 2 * halfize, 2 * halfize);
+                    int drawSize = halfize > 0 ? halfize : 1;
+                    imageToDraw = buf.getSubimage(cx - halfize, cy-halfize, 2 * drawSize, 2 * drawSize);
                 }
                 g.drawImage(imageToDraw, 0, 0, GLOBAL_WIDTH, GLOBAL_HEIGHT, null);
             }
@@ -178,6 +246,11 @@ public class App {
                     p1 = null;
                     p2 = null;
                     panel.repaint();
+                }
+                else if (e.getButton() == MouseEvent.BUTTON2) {
+                    //FigureTemplate ft = templates.get(selectedTemplateName);
+                    //addObject(ft, e.getX(), e.getY());
+                    figureQueue.offer(new Point(e.getX(), e.getY()));
                 }
             }
 
@@ -199,12 +272,15 @@ public class App {
         currentGeneration = Util.initArray(GLOBAL_WIDTH, GLOBAL_HEIGHT);
         nextGeneration = Util.initArray(GLOBAL_WIDTH, GLOBAL_HEIGHT);
         loadTemplates();
+        createColors();
+        setSelectedTemplateName("spacefiller");
         System.out.println("Templates: maxWidth=" + maxWidth + "; maxHeight=" + maxHeight);
 
         //custom_preset();
         random_figure();
         crc32Generation();
         print();
+        updateFrameTitle();
 
         while (!stopCalculations) {
             calculateNextGeneration();
@@ -231,8 +307,15 @@ public class App {
     }
 
     static void calculateNextGeneration() throws  Exception{
+        Point p = (Point) figureQueue.poll();
+        if (p != null) {
+            addObject(templates.get(selectedTemplateName), p.getX(), p.getY());
+        }
+
         List<Point> drawPoints = new LinkedList<>();
-        Random r = new Random(System.currentTimeMillis());
+        born = 0;
+        survived = 0;
+        died = 0;
         for (int i = 0; i < GLOBAL_WIDTH; i++) {
             for (int j = 0; j < GLOBAL_HEIGHT; j++) {
                 byte self = currentGeneration[i][j];
@@ -254,7 +337,7 @@ public class App {
                 if (isDead(self)) {
                     if (neighboursCount == 3 ) {
                         next = 1;
-                        alive++;
+                        born++;
                     }
                     else {
                         next = 0;
@@ -263,10 +346,11 @@ public class App {
                 else {
                     if (neighboursCount == 2 || neighboursCount == 3) {
                         next = 1;
+                        survived++;
                     }
                     else {
                         next = 0;
-                        alive--;
+                        died++;
                     }
                 }
                 nextGeneration[i][j] = next;
@@ -279,10 +363,14 @@ public class App {
         queue.offer(drawPoints);
         panel.repaint();
 
+        long alive = born + survived + died;
         if (alive == 0) {
             System.out.println("Nobody left alive");
             //System.exit(0);
             stopCalculations = true;
+        }
+        if (alive < 0) {
+            throw new IllegalStateException("negative alive " + alive);
         }
 
         byte[][] temporal = currentGeneration;
@@ -292,6 +380,7 @@ public class App {
         print();
 
         crc32Generation();
+        updateFrameTitle();
 
         if (isPentamino && currentGenerationIndex == 1103) {
             Thread.sleep(5000);

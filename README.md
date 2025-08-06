@@ -4,17 +4,13 @@
 
 <div>Build instructions:</div>
 <ol>
-  <li>Clone the project: git clone https://github.com/sashonk/life</li>
+  <li>Clone the project: <i>git clone https://github.com/sashonk/life</i></li>
   <li>Navigate to the directory</li>
-  <li>Build the code by running: <b>mvn install</b></li>
-  <li>Run the program: java -jar target/app.jar</li>
+  <li>Build the code by running: <i>mvn install</i></li>
+  <li>Run the program: <i>java -jar target/app.jar</i></li>
 </ol>
 
-<div>The simulation starts instantly when the application is run. Artifacts are rendered on the JPanel. </div>
-
-<div>There is a set of predefined well-known figures (glyder, boat, triplet, etc.). The user can select a figure and place it on the field. The name of the selected figure is rendered in JFrame's title (as well as number of alive, dead, born and survived cells) </div>
-
-<div>These mouse buttons and keyboard keys are available: </div>
+<div>The simulation starts instantly when the application is run. Artifacts are rendered on the JPanel. There is a set of predefined well-known figures (glyder, boat, triplet, etc.). The user can select a figure and place it on the field. The name of the selected figure is rendered in JFrame's title (as well as number of alive, dead, born and survived cells). These mouse buttons and keyboard keys are available for the user: </div>
 <ul>
   <li>"1" - fast simulation</li>
     <li>"2" - slow simulation</li>
@@ -27,4 +23,5 @@
 </ul>
 
 <img width="989" height="826" alt="image" src="https://github.com/user-attachments/assets/3df553de-7964-45f5-bd78-8a345465df0b" />
+
 

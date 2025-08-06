@@ -12,3 +12,5 @@ MMB - place selected figure at cursor location
 "," - select previous figure
 "." - select next figure
 
+
+<img width="989" height="826" alt="image" src="https://github.com/user-attachments/assets/3df553de-7964-45f5-bd78-8a345465df0b" />

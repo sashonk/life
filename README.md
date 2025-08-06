@@ -22,8 +22,10 @@
     <li>"." - select next figure</li>
 </ul>
 
-<img width="989" height="826" alt="image" src="https://github.com/user-attachments/assets/3df553de-7964-45f5-bd78-8a345465df0b" />
-<img width="993" height="833" alt="image" src="https://github.com/user-attachments/assets/96f4d0d8-d462-49ff-95ed-b2bcc1f4f665" />
+<img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/3df553de-7964-45f5-bd78-8a345465df0b" />
+<img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/96f4d0d8-d462-49ff-95ed-b2bcc1f4f665" />
+<img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/e28c7585-2e59-401c-9af2-7c8c0bb4b2b6" />
+
 
 
 

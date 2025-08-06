@@ -1,16 +1,30 @@
 # life
 
-Implementation of Conwoy's "LIFE" program. 
-There is a set of predefined well-known figures (glyder, boat, triplet, etc.). The user can select a figure and place it on the field.
+<div>Implementation of <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conwoy's Game of Life</a></div>
 
-"1" - fast simulation<br>
-"2" - slow simulation<br>
-"0" - real time simulation<br>
-LMB - zoom in (drag cursor from point A to point B while holding LMB)
-RMB - reset zoom
-MMB - place selected figure at cursor location
-"," - select previous figure
-"." - select next figure
+<div>Build instructions:</div>
+<ol>
+  <li>Clone the project: git clone https://github.com/sashonk/life</li>
+  <li>Navigate to the directory</li>
+  <li>Build the code by running: <b>mvn install</b></li>
+  <li>Run the program: java -jar target/app.jar</li>
+</ol>
 
+<div>The simulation starts instantly when the application is run. Artifacts are rendered on the JPanel. </div>
+
+<div>There is a set of predefined well-known figures (glyder, boat, triplet, etc.). The user can select a figure and place it on the field. The name of the selected figure is rendered in JFrame's title (as well as number of alive, dead, born and survived cells) </div>
+
+<div>These mouse buttons and keyboard keys are available: </div>
+<ul>
+  <li>"1" - fast simulation</li>
+    <li>"2" - slow simulation</li>
+    <li>"0" - real time simulation</li>
+    <li>LMB - zoom in (drag cursor from point A to point B while holding LMB)</li>
+    <li>RMB - reset zoom</li>
+    <li>MMB - place selected figure at cursor location</li>
+    <li>"," - select previous figure</li>
+    <li>"." - select next figure</li>
+</ul>
 
 <img width="989" height="826" alt="image" src="https://github.com/user-attachments/assets/3df553de-7964-45f5-bd78-8a345465df0b" />
+
